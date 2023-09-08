@@ -3,11 +3,11 @@ const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const { default: axios } = require('axios')
-const Config = require('../models/Config.model')
-const { default: config } = require('../configs/config')
-const { default: mongoose } = require('mongoose')
+const ConfigModel = require('../models/Config.model')
+const config = require('../configs/config')
+const { mongoose } = require('mongoose')
+const forbiddenPath = require('../middlewares/forbiddenPath.middleware')
 
-// Config
 require('dotenv').config()
 
 mongoose.connect(
@@ -50,42 +50,90 @@ app.post('/repeat', async (req, res) => {
 
 app.get('/config', async (req, res, next) => {
   try {
-    const configData = await Config.find()
+    const configData = await ConfigModel.find()
     res.status(200).json(configData)
   } catch (error) {
     next(error)
   }
 })
 
-app.post('/config', async (req, res, next) => {
+app.post('/config', forbiddenPath, async (req, res, next) => {
   const origin = req.body.origin
   const target = req.body.target
-  if (!origin || !target) {
-    return res.status(400).json({
-      msg: 'Missing origin or target data',
-    })
-  }
-
-  if (config.blackList.includes(target)) {
-    return res.status(400).json({
-      target: 'Forbidden target data',
-    })
-  }
 
   try {
-    const config = new Config({
+    const config = new ConfigModel({
       origin,
       target,
     })
     const result = await config.save()
-    res.status(200).json(result)
+    res.status(201).json(result)
   } catch (error) {
     if ('code' in error && error.code === 11000) {
-      console.log(error)
+      let keyPattern = ''
+      if (error.keyPattern?.origin === 1) {
+        keyPattern = 'origin'
+      } else if (error.keyPattern?.target === 1) {
+        keyPattern = 'target'
+      } else {
+        console.log('Duplicate key but keyPattern is not origin/target')
+        return next(err)
+      }
       return res.status(400).json({
-        msg: 'Duplicate target, try another one',
+        msg: `Duplicate ${keyPattern}, try another one`,
       })
     }
+    next(error)
+  }
+})
+
+app.put('/config/:id', forbiddenPath, async (req, res, next) => {
+  const id = req.params.id
+  const origin = req.body.origin
+  const target = req.body.target
+
+  try {
+    await ConfigModel.updateOne(
+      {
+        _id: id,
+      },
+      {
+        origin,
+        target,
+      }
+    )
+    res.status(200).json({
+      msg: 'Updated successfully',
+    })
+  } catch (error) {
+    if ('code' in error && error.code === 11000) {
+      let keyPattern = ''
+      if (error.keyPattern?.origin === 1) {
+        keyPattern = 'origin'
+      } else if (error.keyPattern?.target === 1) {
+        keyPattern = 'target'
+      } else {
+        console.log('Duplicate key but keyPattern is not origin/target')
+        return next(err)
+      }
+      return res.status(400).json({
+        msg: `Duplicate ${keyPattern}, try another one`,
+      })
+    }
+    next(error)
+  }
+})
+
+app.delete('/config/:id', async (req, res, next) => {
+  const id = req.params.id
+  try {
+    await ConfigModel.deleteOne({
+      _id: id,
+    })
+    res.status(200).json({
+      msg: 'Deleted successfully',
+    })
+  } catch (error) {
     next(error)
   }
 })

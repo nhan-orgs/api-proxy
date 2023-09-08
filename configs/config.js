@@ -1,5 +1,3 @@
-const config = {
-  blackList: ['repeat', 'config'],
+module.exports = {
+  blackList: [/^repeat($|\/.*)/, /^config($|\/.*)/],
 }
-
-export default config
