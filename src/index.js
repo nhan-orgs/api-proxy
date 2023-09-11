@@ -32,27 +32,34 @@ app.use(
 // Proxy configuration
 /** @type {import('http-proxy-middleware/dist/types').RequestHandler<express.Request, express.Response>} */
 
-const proxyList = JSON.parse(JSON.stringify(proxyJson))
-proxyList.forEach((proxy) => {
-  if (!proxy.origin || !proxy.target) {
-    return console.log('Empty origin or target: ', proxy)
-  }
-  console.log(`${proxy.origin} - ${proxy.target}`)
-  app.use(
-    proxy.origin,
-    createProxyMiddleware({
-      target: proxy.target,
-      pathFilter: '**',
-      onProxyRes: (proxyRes, req, res) => {
-        proxyRes.headers['access-control-allow-origin'] = '*'
-      },
-      pathRewrite: {
-        [`^${proxy.origin}`]: '',
-      },
-      changeOrigin: true,
+if (proxyJson) {
+  try {
+    const proxyList = JSON.parse(JSON.stringify(proxyJson))
+
+    proxyList.forEach((proxy) => {
+      if (!proxy.origin || !proxy.target) {
+        return console.log('Empty origin or target: ', proxy)
+      }
+      console.log(`${proxy.origin} - ${proxy.target}`)
+      app.use(
+        proxy.origin,
+        createProxyMiddleware({
+          target: proxy.target,
+          pathFilter: '**',
+          onProxyRes: (proxyRes, req, res) => {
+            proxyRes.headers['access-control-allow-origin'] = '*'
+          },
+          pathRewrite: {
+            [`^${proxy.origin}`]: '',
+          },
+          changeOrigin: true,
+        })
+      )
     })
-  )
-})
+  } catch (error) {
+    console.log('Configure proxy failed: ', error)
+  }
+}
 
 const writeProxyJson = async () => {
   try {
