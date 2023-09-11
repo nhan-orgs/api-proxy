@@ -7,6 +7,7 @@ const ConfigModel = require('../models/Config.model')
 const config = require('../configs/config')
 const { mongoose } = require('mongoose')
 const forbiddenPath = require('../middlewares/forbiddenPath.middleware')
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 require('dotenv').config()
 
@@ -26,6 +27,11 @@ app.use(
     origin: '*',
   })
 )
+
+// Proxy configuration
+/** @type {import('http-proxy-middleware/dist/types').RequestHandler<express.Request, express.Response>} */
+
+// Route
 
 app.post('/repeat', async (req, res) => {
   const url = req.body.url,
