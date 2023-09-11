@@ -3,12 +3,13 @@ const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const { default: axios } = require('axios')
-const ConfigModel = require('../models/Config.model')
+const ProxyModel = require('../models/Proxy.model')
 const config = require('../configs/config')
 const { mongoose } = require('mongoose')
 const forbiddenPath = require('../middlewares/forbiddenPath.middleware')
-const { createProxyMiddleware } = require('http-proxy-middleware');
-
+const { createProxyMiddleware } = require('http-proxy-middleware')
+const fs = require('fs')
+const proxyJson = require('../configs/proxy.json')
 require('dotenv').config()
 
 mongoose.connect(
@@ -30,6 +31,37 @@ app.use(
 
 // Proxy configuration
 /** @type {import('http-proxy-middleware/dist/types').RequestHandler<express.Request, express.Response>} */
+
+const proxyList = JSON.parse(JSON.stringify(proxyJson))
+proxyList.forEach((proxy) => {
+  if (!proxy.origin || !proxy.target) {
+    return console.log('Empty origin or target: ', proxy)
+  }
+  console.log(`${proxy.origin} - ${proxy.target}`)
+  app.use(
+    proxy.origin,
+    createProxyMiddleware({
+      target: proxy.target,
+      pathFilter: '**',
+      onProxyRes: (proxyRes, req, res) => {
+        proxyRes.headers['access-control-allow-origin'] = '*'
+      },
+      pathRewrite: {
+        [`^${proxy.origin}`]: '',
+      },
+      changeOrigin: true,
+    })
+  )
+})
+
+const writeProxyJson = async () => {
+  try {
+    const proxy = await ProxyModel.find()
+    fs.writeFileSync('./configs/proxy.json', JSON.stringify(proxy))
+  } catch (error) {
+    console.log('Write proxy json failed: ', error)
+  }
+}
 
 // Route
 
@@ -54,25 +86,26 @@ app.post('/repeat', async (req, res) => {
   }
 })
 
-app.get('/config', async (req, res, next) => {
+app.get('/proxy', async (req, res, next) => {
   try {
-    const configData = await ConfigModel.find()
-    res.status(200).json(configData)
+    const proxyData = await ProxyModel.find()
+    res.status(200).json(proxyData)
   } catch (error) {
     next(error)
   }
 })
 
-app.post('/config', forbiddenPath, async (req, res, next) => {
+app.post('/proxy', forbiddenPath, async (req, res, next) => {
   const origin = req.body.origin
   const target = req.body.target
 
   try {
-    const config = new ConfigModel({
+    const proxy = new ProxyModel({
       origin,
       target,
     })
-    const result = await config.save()
+    const result = await proxy.save()
+    await writeProxyJson()
     res.status(201).json(result)
   } catch (error) {
     if ('code' in error && error.code === 11000) {
@@ -93,13 +126,13 @@ app.post('/config', forbiddenPath, async (req, res, next) => {
   }
 })
 
-app.put('/config/:id', forbiddenPath, async (req, res, next) => {
+app.put('/proxy/:id', forbiddenPath, async (req, res, next) => {
   const id = req.params.id
   const origin = req.body.origin
   const target = req.body.target
 
   try {
-    await ConfigModel.updateOne(
+    await ProxyModel.updateOne(
       {
         _id: id,
       },
@@ -108,6 +141,7 @@ app.put('/config/:id', forbiddenPath, async (req, res, next) => {
         target,
       }
     )
+    await writeProxyJson()
     res.status(200).json({
       msg: 'Updated successfully',
     })
@@ -130,12 +164,13 @@ app.put('/config/:id', forbiddenPath, async (req, res, next) => {
   }
 })
 
-app.delete('/config/:id', async (req, res, next) => {
+app.delete('/proxy/:id', async (req, res, next) => {
   const id = req.params.id
   try {
-    await ConfigModel.deleteOne({
+    await ProxyModel.deleteOne({
       _id: id,
     })
+    await writeProxyJson()
     res.status(200).json({
       msg: 'Deleted successfully',
     })

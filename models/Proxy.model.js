@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const ConfigSchema = new mongoose.Schema(
+const ProxySchema = new mongoose.Schema(
   {
     origin: {
       type: String,
@@ -18,4 +18,4 @@ const ConfigSchema = new mongoose.Schema(
   }
 )
 
-module.exports = mongoose.model('Config', ConfigSchema)
+module.exports = mongoose.model('Proxy', ProxySchema)

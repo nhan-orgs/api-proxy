@@ -1,3 +1,3 @@
 module.exports = {
-  blackList: [/^repeat($|\/.*)/, /^config($|\/.*)/],
+  blackList: [/^\/?repeat($|\/.*)/, /^\/?proxy($|\/.*)/],
 }
