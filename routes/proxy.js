@@ -4,6 +4,7 @@ const forbiddenPath = require('../middlewares/forbiddenPath.middleware')
 const router = express.Router()
 const fs = require('fs')
 const { pagination } = require('../middlewares/pagination.middleware')
+const { verifyPassword } = require('../middlewares/verifyPassword.middleware')
 
 router.get('/', pagination, async (req, res, next) => {
   const limit = req.limit
@@ -17,7 +18,7 @@ router.get('/', pagination, async (req, res, next) => {
   }
 })
 
-router.post('/', forbiddenPath, async (req, res, next) => {
+router.post('/', verifyPassword, forbiddenPath, async (req, res, next) => {
   const origin = req.body.origin
   const target = req.body.target
 
@@ -57,7 +58,7 @@ const writeProxyJson = async () => {
   }
 }
 
-router.put('//:id', forbiddenPath, async (req, res, next) => {
+router.put('/:id', verifyPassword, forbiddenPath, async (req, res, next) => {
   const id = req.params.id
   const origin = req.body.origin
   const target = req.body.target
@@ -95,7 +96,7 @@ router.put('//:id', forbiddenPath, async (req, res, next) => {
   }
 })
 
-router.delete('//:id', async (req, res, next) => {
+router.delete('/:id', verifyPassword, async (req, res, next) => {
   const id = req.params.id
   try {
     await ProxyModel.deleteOne({
