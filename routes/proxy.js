@@ -52,7 +52,7 @@ router.post('/', verifyPassword, forbiddenPath, async (req, res, next) => {
 const writeProxyJson = async () => {
   try {
     const proxy = await ProxyModel.find()
-    fs.writeFileSync('./configs/.json', JSON.stringify(proxy))
+    fs.writeFileSync('./configs/proxy.json', JSON.stringify(proxy))
   } catch (error) {
     console.log('Write proxy json failed: ', error)
   }
