@@ -3,13 +3,12 @@ const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const { default: axios } = require('axios')
-const ProxyModel = require('../models/Proxy.model')
-const config = require('../configs/config')
+const ProxyModel = require('./models/Proxy.model')
 const { mongoose } = require('mongoose')
-const forbiddenPath = require('../middlewares/forbiddenPath.middleware')
 const { createProxyMiddleware } = require('http-proxy-middleware')
 const fs = require('fs')
-const proxyJson = require('../configs/proxy.json')
+const proxyJson = require('./configs/proxy.json')
+const proxyRoute = require('./routes/proxy')
 require('dotenv').config()
 
 mongoose.connect(
@@ -72,7 +71,7 @@ const writeProxyJson = async () => {
 
 // Route
 
-app.post('/repeat', async (req, res) => {
+app.post('/repeat', async (req, res, next) => {
   const url = req.body.url,
     method = req.body.method,
     data = req.body.data
@@ -93,98 +92,7 @@ app.post('/repeat', async (req, res) => {
   }
 })
 
-app.get('/proxy', async (req, res, next) => {
-  try {
-    const proxyData = await ProxyModel.find()
-    res.status(200).json(proxyData)
-  } catch (error) {
-    next(error)
-  }
-})
-
-app.post('/proxy', forbiddenPath, async (req, res, next) => {
-  const origin = req.body.origin
-  const target = req.body.target
-
-  try {
-    const proxy = new ProxyModel({
-      origin,
-      target,
-    })
-    const result = await proxy.save()
-    await writeProxyJson()
-    res.status(201).json(result)
-  } catch (error) {
-    if ('code' in error && error.code === 11000) {
-      let keyPattern = ''
-      if (error.keyPattern?.origin === 1) {
-        keyPattern = 'origin'
-      } else if (error.keyPattern?.target === 1) {
-        keyPattern = 'target'
-      } else {
-        console.log('Duplicate key but keyPattern is not origin/target')
-        return next(err)
-      }
-      return res.status(400).json({
-        msg: `Duplicate ${keyPattern}, try another one`,
-      })
-    }
-    next(error)
-  }
-})
-
-app.put('/proxy/:id', forbiddenPath, async (req, res, next) => {
-  const id = req.params.id
-  const origin = req.body.origin
-  const target = req.body.target
-
-  try {
-    await ProxyModel.updateOne(
-      {
-        _id: id,
-      },
-      {
-        origin,
-        target,
-      }
-    )
-    await writeProxyJson()
-    res.status(200).json({
-      msg: 'Updated successfully',
-    })
-  } catch (error) {
-    if ('code' in error && error.code === 11000) {
-      let keyPattern = ''
-      if (error.keyPattern?.origin === 1) {
-        keyPattern = 'origin'
-      } else if (error.keyPattern?.target === 1) {
-        keyPattern = 'target'
-      } else {
-        console.log('Duplicate key but keyPattern is not origin/target')
-        return next(err)
-      }
-      return res.status(400).json({
-        msg: `Duplicate ${keyPattern}, try another one`,
-      })
-    }
-    next(error)
-  }
-})
-
-app.delete('/proxy/:id', async (req, res, next) => {
-  const id = req.params.id
-  try {
-    await ProxyModel.deleteOne({
-      _id: id,
-    })
-    await writeProxyJson()
-    res.status(200).json({
-      msg: 'Deleted successfully',
-    })
-  } catch (error) {
-    next(error)
-  }
-})
+app.use('/proxy', proxyRoute)
 
 app.use(async (req, res, next, err) => {
   console.log(err)
