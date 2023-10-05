@@ -59,16 +59,6 @@ if (proxyJson) {
     console.log('Configure proxy failed: ', error)
   }
 }
-
-const writeProxyJson = async () => {
-  try {
-    const proxy = await ProxyModel.find()
-    fs.writeFileSync('./configs/proxy.json', JSON.stringify(proxy))
-  } catch (error) {
-    console.log('Write proxy json failed: ', error)
-  }
-}
-
 // Route
 
 app.post('/repeat', async (req, res, next) => {
