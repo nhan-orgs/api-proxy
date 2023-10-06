@@ -2,9 +2,9 @@ const express = require('express')
 const ProxyModel = require('../models/Proxy.model')
 const forbiddenPath = require('../middlewares/forbiddenPath.middleware')
 const router = express.Router()
-const fs = require('fs')
 const { pagination } = require('../middlewares/pagination.middleware')
 const { verifyPassword } = require('../middlewares/verifyPassword.middleware')
+const { updateProxyMiddlewares } = require('../configs/proxy')
 
 router.get('/', pagination, async (req, res, next) => {
   const limit = req.limit
@@ -28,7 +28,10 @@ router.post('/', verifyPassword, forbiddenPath, async (req, res, next) => {
       target,
     })
     const result = await proxy.save()
-    await writeProxyJson()
+
+    const proxies = await ProxyModel.find()
+    await updateProxyMiddlewares(proxies)
+
     res.status(201).json(result)
   } catch (error) {
     if ('code' in error && error.code === 11000) {
@@ -49,15 +52,6 @@ router.post('/', verifyPassword, forbiddenPath, async (req, res, next) => {
   }
 })
 
-const writeProxyJson = async () => {
-  try {
-    const proxy = await ProxyModel.find()
-    fs.writeFileSync('./configs/proxy.json', JSON.stringify(proxy))
-  } catch (error) {
-    console.log('Write proxy json failed: ', error)
-  }
-}
-
 router.put('/:id', verifyPassword, forbiddenPath, async (req, res, next) => {
   const id = req.params.id
   const origin = req.body.origin
@@ -73,7 +67,10 @@ router.put('/:id', verifyPassword, forbiddenPath, async (req, res, next) => {
         target,
       }
     )
-    await writeProxyJson()
+
+    const proxies = await ProxyModel.find()
+    await updateProxyMiddlewares(proxies)
+
     res.status(200).json({
       msg: 'Updated successfully',
     })
@@ -102,7 +99,10 @@ router.delete('/:id', verifyPassword, async (req, res, next) => {
     await ProxyModel.deleteOne({
       _id: id,
     })
-    await writeProxyJson()
+
+    const proxies = await ProxyModel.find()
+    await updateProxyMiddlewares(proxies)
+
     res.status(200).json({
       msg: 'Deleted successfully',
     })
