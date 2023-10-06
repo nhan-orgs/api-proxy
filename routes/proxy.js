@@ -30,7 +30,7 @@ router.post('/', verifyPassword, forbiddenPath, async (req, res, next) => {
     const result = await proxy.save()
 
     const proxies = await ProxyModel.find()
-    await updateProxyMiddlewares(proxies)
+    updateProxyMiddlewares(proxies)
 
     res.status(201).json(result)
   } catch (error) {
@@ -69,7 +69,7 @@ router.put('/:id', verifyPassword, forbiddenPath, async (req, res, next) => {
     )
 
     const proxies = await ProxyModel.find()
-    await updateProxyMiddlewares(proxies)
+    updateProxyMiddlewares(proxies)
 
     res.status(200).json({
       msg: 'Updated successfully',
@@ -101,7 +101,7 @@ router.delete('/:id', verifyPassword, async (req, res, next) => {
     })
 
     const proxies = await ProxyModel.find()
-    await updateProxyMiddlewares(proxies)
+    updateProxyMiddlewares(proxies)
 
     res.status(200).json({
       msg: 'Deleted successfully',
