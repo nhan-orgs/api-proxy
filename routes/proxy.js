@@ -5,6 +5,7 @@ const router = express.Router()
 const { pagination } = require('../middlewares/pagination.middleware')
 const { verifyPassword } = require('../middlewares/verifyPassword.middleware')
 const { updateProxyMiddlewares } = require('../configs/proxy')
+const logger = require('../utils/logger')
 
 router.get('/', pagination, async (req, res, next) => {
   const limit = req.limit
@@ -33,6 +34,7 @@ router.post('/', verifyPassword, forbiddenPath, async (req, res, next) => {
     updateProxyMiddlewares(proxies)
 
     res.status(201).json(result)
+    logger.log('add proxy', logger.REF_TYPES.PROXY, result._id)
   } catch (error) {
     if ('code' in error && error.code === 11000) {
       let keyPattern = ''
@@ -74,6 +76,7 @@ router.put('/:id', verifyPassword, forbiddenPath, async (req, res, next) => {
     res.status(200).json({
       msg: 'Updated successfully',
     })
+    logger.log('update proxy', logger.REF_TYPES.PROXY, id)
   } catch (error) {
     if ('code' in error && error.code === 11000) {
       let keyPattern = ''
@@ -106,6 +109,7 @@ router.delete('/:id', verifyPassword, async (req, res, next) => {
     res.status(200).json({
       msg: 'Deleted successfully',
     })
+    logger.log('delete proxy', logger.REF_TYPES.PROXY, id)
   } catch (error) {
     next(error)
   }
