@@ -13,7 +13,7 @@ const updateProxyMiddlewares = (proxyConfigs) => {
         proxyRes.headers['access-control-allow-origin'] = '*'
       },
       pathRewrite: {
-        [`^${proxyConfig.origin}`]: '',
+        [`^${proxyConfig.origin}`]: '/',
       },
       changeOrigin: true,
     })

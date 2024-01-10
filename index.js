@@ -68,10 +68,14 @@ app.use(async (req, res, next) => {
     }
   }
 
-  const middleware = middlewares[req.path]
+  console.log('req path:', req.path)
+ 
+  const middlewareKey = Object.keys(middlewares).find(item => req.path.startsWith(item))
 
-  if (typeof middleware === 'function') {
-    middleware(req, res, next)
+  console.log('middleware key:', middlewareKey)
+
+  if (middlewareKey) {
+    middlewares[middlewareKey](req, res, next)
   } else {
     res.status(404).send('')
   }
